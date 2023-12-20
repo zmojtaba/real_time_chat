@@ -4,9 +4,11 @@ from rest_framework import serializers
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    sender = UserSerializer()
     class Meta:
         model = Message
         exclude = ('conversation',)
+        extra_fields = ('sender',)
 
 
 class ConversationListSerializer(serializers.ModelSerializer):
@@ -30,3 +32,4 @@ class ConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conversation
         fields = ['starter', 'receiver', 'start_time']
+

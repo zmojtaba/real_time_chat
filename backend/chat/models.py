@@ -22,7 +22,7 @@ class Message(models.Model):
                               null=True, related_name='message_sender')
     text = models.CharField(max_length=200, blank=True)
     attachment = models.FileField(blank=True)
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE,)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="message_conversation")
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
