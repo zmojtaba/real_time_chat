@@ -20,5 +20,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0),name='schema-swagger-ui'),
     path('account/',    include('account.urls', namespace='account') ),
-    path('chat/', include('chat.urls', namespace='chat'))
+    path('chat/', include('chat.urls', namespace='chat')),
+    path("", include("todo.urls")),
+    path("django-rq/", include("django_rq.urls"))
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

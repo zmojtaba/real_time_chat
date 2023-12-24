@@ -32,10 +32,22 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'mail_templated',
     'account',
-    'chat'
+    'chat', 
+    'todo',
+    'django_rq', ### install it with pip install django-rq
+      
     
 
 ]
+
+
+RQ_QUEUES = {
+    'default': {
+    'HOST': 'localhost',
+    'PORT': 6379,
+    'DB': 0,
+    }
+}
 
 
 CORS_ALLOWED_ORIGINS = [
@@ -51,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'todo.middleware.middleware'
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -84,6 +97,22 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 #         },
 #     },
 # }
+
+
+# redis configuration for caching data
+CACHE_TTL = 60 * 1500   # time to live is 1500min
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "KEY_PREFIX": "example",
+    }
+}
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
 
 
 DATABASES = {
