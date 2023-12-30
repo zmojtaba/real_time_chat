@@ -163,3 +163,8 @@ cython_debug/
 migrations/
 templates/
 mediafiles/
+*node_modules/
+node_modules/
+chatEnv/
+./chatEnv/
+./chatEnv
