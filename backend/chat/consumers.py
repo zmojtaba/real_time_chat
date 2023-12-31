@@ -2,87 +2,98 @@ import base64
 import json
 import secrets
 from datetime import datetime
-
+from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from django.core.files.base import ContentFile
+from channels.db import database_sync_to_async
 
-
+from django.db.models import Q
+from asgiref.sync import sync_to_async
 from .models import Message, Conversation
 from .api.serializer import MessageSerializer
+from channels.layers import get_channel_layer
+import getpass
+
+User = get_user_model()
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        current_user = await self.get_user(username = 'kaka@gmail.com' )
+        other_user = await self.get_user(username = self.scope['url_route']['kwargs']['username'] )
+        self.conversation = Conversation.objects.filter(Q(starter=current_user, receiver=other_user)|Q(starter=current_user, receiver=other_user))
+
+        print('________________consumer_____________', other_user, current_user)
+
+        self.room_name = (
+            f"{current_user.id}_{other_user.id}"
+            if current_user.id > other_user.id
+            else f"{other_user.id}_{current_user.id}"
+        )
+        self.room_group_name = f'chat_{self.room_name}'
+
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_layer)
+        await self.disconnect(close_code)
 
 
-class ChatConsumer(WebsocketConsumer):
-    def connect(self):
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = f"chat_{self.room_name}"
-        print("_________________________________here____",self.room_group_name)
-
-        # Join room group
-        # async_to_sync(self.channel_layer.group_add)(
-        #     self.room_group_name, self.channel_name
-        # )
-        self.accept()
-
-    def disconnect(self, close_code):
-        pass
     
-        # Leave room group
-        # async_to_sync(self.channel_layer.group_discard)(
-        #     self.room_group_name, self.channel_name
-        # )
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        message = data['message']
+        sender =            await self.get_user(data['senderUsername'])
+        receiver =          await self.get_user(data['receiverUsername'])
 
-    # Receive message from WebSocket
-    def receive(self, text_data=None, bytes_data=None):
-        # parse the json data into dictionary object
-        print('================', text_data)
-        text_data_json = json.loads(text_data)
-        print('================', text_data_json)
+        # await self.save_message(sender, receiver, message)
 
-        # Send message to room group
-        chat_type = {"type": "chat_message"}
-        return_dict = {**chat_type, **text_data_json}
-        # async_to_sync(self.channel_layer.group_send)(
-        #     self.room_group_name,
-        #     return_dict,
-        # )
+        messages = await self.get_messages()
 
-    # Receive message from room group
-    def chat_message(self, event):
-        text_data_json = event.copy()
-        print('========================----------========', text_data_json)
-        text_data_json.pop("type")
-        message, attachment = (
-            text_data_json["message"],
-            text_data_json.get("attachment"),
-        )
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message,
+                'senderUsername': sender.username,
+                # 'messages': messages,
+            },
+        )       
+        print("________________________________receiver is finished")
 
-        conversation = Conversation.objects.get(id=int(self.room_name))
-        sender = self.scope['user']
+    async def chat_message(self, event):
+        print("_____________________________chat message_________________________", event)
+        message = event['message']
+        username = event['senderUsername']
+        # messages = event['messages']
 
-        # Attachment
-        if attachment:
-            file_str, file_ext = attachment["data"], attachment["format"]
-
-            file_data = ContentFile(
-                base64.b64decode(file_str), name=f"{secrets.token_hex(8)}.{file_ext}"
-            )
-            _message = Message.objects.create(
-                sender=sender,
-                attachment=file_data,
-                text=message,
-                conversation_id=conversation,
-            )
-        else:
-            _message = Message.objects.create(
-                sender=sender,
-                text=message,
-                conversation_id=conversation,
-            )
-        serializer = MessageSerializer(instance=_message)
-        # Send message to WebSocket
-        self.send(
+        await self.send(
             text_data=json.dumps(
-                serializer.data
+                {
+                    'message': message,
+                    'senderUsername': username,
+                    # 'messages': messages,
+                }
             )
         )
+
+    @database_sync_to_async
+    def get_user(self, username):
+        return User.objects.filter(username=username).first()
+
+    @database_sync_to_async
+    def get_conversation(self, starter, receiver):
+        return (Conversation.objects.select_related().filter(Q(starter=starter, receiver=receiver)|Q(starter=receiver, receiver=starter)).first())
+
+
+    @database_sync_to_async
+    def get_messages(self):
+        messages = self.conversation.first().message_conversation.all()
+        messages = MessageSerializer(messages, many=True)
+        return messages
+
+
+    @database_sync_to_async
+    def save_message(self, sender, receiver, message):
+        Message.objects.create(sender=sender, text=message, conversation=self.conversation.first())

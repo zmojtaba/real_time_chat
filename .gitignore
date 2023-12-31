@@ -167,4 +167,5 @@ mediafiles/
 node_modules/
 chatEnv/
 ./chatEnv/
-./chatEnv
+./front/node_modules
+.angular

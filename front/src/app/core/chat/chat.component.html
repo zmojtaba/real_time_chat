@@ -1,0 +1,26 @@
+
+
+  <mat-grid-list cols="2" >
+    <mat-grid-tile>
+      <nb-card [size]="'large'">
+        <nb-card-header>Chat Room</nb-card-header>
+        <nb-card-body>
+          <nb-list>
+            <nb-list-item *ngFor="let conversation of conversations" >
+              <a  (click)="onChatUsername(conversation.otherUsername)" >{{conversation.otherUsername}}</a>
+            </nb-list-item>
+          </nb-list>
+        </nb-card-body>
+      </nb-card>
+
+    </mat-grid-tile>
+    <mat-grid-tile>
+      
+      <app-chat-detail *ngIf="chatUsername" [otherUsername]="chatUsername"></app-chat-detail>
+    </mat-grid-tile>
+
+  </mat-grid-list>
+
+
+
+<router-outlet ></router-outlet>

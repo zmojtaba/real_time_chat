@@ -11,9 +11,7 @@ class IO():
 
     def _success(self, message): 
         return {
-            'success' :{
                 'detail': message
-            }
         }
 
 io = IO()

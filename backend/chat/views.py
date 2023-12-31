@@ -15,7 +15,8 @@ class ConverstationsView(APIView):
     permission_classes = [IsAuthenticated, ]
     def get(self, request):
         conversation = Conversation.objects.filter( Q(starter=request.user) |
-                                                    Q(receiver=request.user))
+                                                    Q(receiver=request.user)
+                                                )
         if conversation.exists():
             serializer = ConversationSerializer(conversation, many=True)
             return Response(io._success(serializer.data))
@@ -26,7 +27,8 @@ class ConverstationsView(APIView):
 class ConversationMessageView(APIView):
     permission_classes = [IsAuthenticated,]
 
-    def get(self, request, username):
+    # change it to post methods
+    def post(self, request, username):
         print('__________________', request.user, username)
         try:
             conversation = Conversation.objects.get(

@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     'chat', 
     'todo',
     'django_rq', ### install it with pip install django-rq
-      
+    'django_resized'
     
 
 ]
@@ -89,14 +89,14 @@ TEMPLATES = [
 ASGI_APPLICATION = "backend.asgi.application"
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [('127.0.0.1', 6379)],
-#         },
-#     },
-# }
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 
 # redis configuration for caching data
